@@ -36,6 +36,11 @@ import {
   type DestinationInfo,
 } from "./landmarkService";
 
+import {
+  analyzeRoute,
+  type RouteAIResult,
+} from "./ai/routeAIService";
+
 setWorkerUrl(workerUrl);
 
 type RouteStep = {
@@ -131,6 +136,9 @@ function App() {
 
   const [destinationInfo, setDestinationInfo] =
     useState<DestinationInfo | null>(null);
+
+  const [routeAIResult, setRouteAIResult] =
+    useState<RouteAIResult | null>(null);
 
   /*
    * Update the 3D destination landmark
@@ -489,6 +497,7 @@ function App() {
         resetNavigation();
 
         setDestinationInfo(null);
+        setRouteAIResult(null);
 
         const destination:
           [number, number] = [
@@ -607,6 +616,9 @@ function App() {
           );
 
           const steps =
+            route.steps.flatMap(
+              (leg) => leg.steps,
+            );
             route.steps.flatMap(
               (leg) =>
                 leg.steps,
@@ -950,6 +962,57 @@ function App() {
     setRouteInfo(
       route,
     );
+
+    const routeSteps =
+      route.steps.flatMap(
+        (leg) => leg.steps,
+      );
+
+    const destinationCoordinate =
+      route.geometry.coordinates[
+        route.geometry.coordinates.length - 1
+      ];
+
+    if (destinationCoordinate) {
+      const aiResult =
+        analyzeRoute({
+          routeGeometry:
+            route.geometry.coordinates,
+          distanceMeters:
+            route.distance_meters,
+          durationSeconds:
+            route.duration_seconds,
+          steps: routeSteps,
+          destination: {
+            name:
+              destinationInfo?.name ??
+              "Route destination",
+            category:
+              destinationInfo?.category ??
+              "destination",
+            longitude:
+              destinationCoordinate[0],
+            latitude:
+              destinationCoordinate[1],
+          },
+          currentRoutePosition:
+            route.geometry.coordinates[0] ?? null,
+        });
+
+      setRouteAIResult(aiResult);
+
+      if (
+        aiResult.intelligence
+          .recommendedVisualization !==
+        "normal"
+      ) {
+        setAbstractionEnabled(true);
+        setAbstractionLevel(
+          aiResult.intelligence
+            .recommendedVisualization,
+        );
+      }
+    }
 
     navigationControllerRef.current?.setRoute(
       route.geometry.coordinates,
@@ -1979,6 +2042,58 @@ function App() {
                 </strong>{" "}
                 {durationMinutes} min
               </p>
+
+              {routeAIResult && (
+                <>
+                  <hr />
+
+                  <strong>
+                    🤖 Route Intelligence
+                  </strong>
+
+                  <div
+                    style={{
+                      marginTop: "8px",
+                      padding: "10px",
+                      background: "#f8fafc",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                      fontSize: "12px",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: "0 0 6px",
+                      }}
+                    >
+                      <strong>
+                        Complexity:
+                      </strong>{" "}
+                      {routeAIResult.intelligence.routeComplexity}
+                    </p>
+
+                    <p
+                      style={{
+                        margin: "0 0 6px",
+                      }}
+                    >
+                      <strong>
+                        Visualization:
+                      </strong>{" "}
+                      {routeAIResult.intelligence.recommendedVisualization}
+                    </p>
+
+                    <p
+                      style={{
+                        margin: 0,
+                        color: "#475569",
+                      }}
+                    >
+                      {routeAIResult.intelligence.reason}
+                    </p>
+                  </div>
+                </>
+              )}
 
               <hr />
 
