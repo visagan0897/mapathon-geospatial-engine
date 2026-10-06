@@ -53,7 +53,6 @@ type RouteStep = {
   name: string;
   distance: number;
   duration: number;
-
   maneuver: {
     type: string;
     modifier?: string;
@@ -63,12 +62,10 @@ type RouteStep = {
 type RouteResponse = {
   distance_meters: number;
   duration_seconds: number;
-
   geometry: {
     type: "LineString";
     coordinates: [number, number][];
   };
-
   steps: Array<{
     steps: RouteStep[];
   }>;
@@ -86,88 +83,42 @@ type PanelName =
   | "route"
   | "navigation"
   | "savedRoute"
-  | "mapView"
   | "mapOptions";
 
 function App() {
-  /*
-   * ============================================================
-   * REFERENCES
-   * ============================================================
-   */
-
-  const mapContainerRef =
-    useRef<HTMLDivElement | null>(null);
-
-  const threeContainerRef =
-    useRef<HTMLDivElement | null>(null);
-
-  const mapRef =
-    useRef<MapLibreMap | null>(null);
-
-  const threeSceneRef =
-    useRef<ThreeScene | null>(null);
-
-  const routeSourceRef =
-    useRef<GeoJSONSource | null>(null);
-
-  const destinationMarkerRef =
-    useRef<Marker | null>(null);
-
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const threeContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const threeSceneRef = useRef<ThreeScene | null>(null);
+  const routeSourceRef = useRef<GeoJSONSource | null>(null);
+  const destinationMarkerRef = useRef<Marker | null>(null);
   const navigationControllerRef =
     useRef<NavigationController | null>(null);
-
   const navigationAnimationRef =
     useRef<number | null>(null);
-
-  const navigationActiveRef =
-    useRef(false);
-
-  /*
-   * ============================================================
-   * ROUTE STATE
-   * ============================================================
-   */
+  const navigationActiveRef = useRef(false);
 
   const [routeInfo, setRouteInfo] =
     useState<RouteResponse | null>(null);
-
-  /*
-   * ============================================================
-   * NETWORK / OFFLINE
-   * ============================================================
-   */
 
   const [online, setOnline] =
     useState<boolean>(isOnline());
 
   const [hasSavedRoute, setHasSavedRoute] =
-    useState<boolean>(
-      getSavedRoute() !== null,
-    );
-
-  /*
-   * ============================================================
-   * VISUALIZATION
-   * ============================================================
-   */
+    useState<boolean>(getSavedRoute() !== null);
 
   const [
     abstractionEnabled,
     setAbstractionEnabled,
   ] = useState<boolean>(
-    VISUALIZATION_CONFIG
-      .surroundings
-      .abstractionEnabled,
+    VISUALIZATION_CONFIG.surroundings.abstractionEnabled,
   );
 
   const [
     abstractionLevel,
     setAbstractionLevel,
   ] = useState<AbstractionLevel>(
-    VISUALIZATION_CONFIG
-      .surroundings
-      .level,
+    VISUALIZATION_CONFIG.surroundings.level,
   );
 
   const [viewMode, setViewMode] =
@@ -175,32 +126,14 @@ function App() {
       VISUALIZATION_CONFIG.mode,
     );
 
-  /*
-   * ============================================================
-   * DESTINATION
-   * ============================================================
-   */
-
   const [destinationInfo, setDestinationInfo] =
     useState<DestinationInfo | null>(null);
 
   const [selectedLandmark, setSelectedLandmark] =
     useState<LandmarkSelection | null>(null);
 
-  /*
-   * ============================================================
-   * AI
-   * ============================================================
-   */
-
   const [routeAIResult, setRouteAIResult] =
     useState<RouteAIResult | null>(null);
-
-  /*
-   * ============================================================
-   * NAVIGATION
-   * ============================================================
-   */
 
   const [navigationActive, setNavigationActive] =
     useState(false);
@@ -212,9 +145,7 @@ function App() {
     useState<[number, number] | null>(null);
 
   const [navigationDirection, setNavigationDirection] =
-    useState<"straight" | "left" | "right">(
-      "straight",
-    );
+    useState<"straight" | "left" | "right">("straight");
 
   const [turnDetected, setTurnDetected] =
     useState(false);
@@ -225,12 +156,10 @@ function App() {
   /*
    * ============================================================
    * MENU / PANEL STATE
-   *
-   * IMPORTANT:
-   * The menu only contains names.
-   * Actual information appears only after
-   * clicking a menu item.
    * ============================================================
+   *
+   * ☰ menu contains names only.
+   * Clicking a name opens its corresponding panel.
    */
 
   const [menuOpen, setMenuOpen] =
@@ -250,7 +179,7 @@ function App() {
 
   /*
    * ============================================================
-   * NAVIGATION CONTROLLER INITIALIZATION
+   * NAVIGATION CONTROLLER
    * ============================================================
    */
 
@@ -260,12 +189,8 @@ function App() {
 
     return () => {
       stopNavigationAnimation();
-
-      navigationActiveRef.current =
-        false;
-
-      navigationControllerRef.current =
-        null;
+      navigationActiveRef.current = false;
+      navigationControllerRef.current = null;
     };
   }, []);
 
@@ -276,9 +201,7 @@ function App() {
    */
 
   useEffect(() => {
-    return subscribeToNetworkStatus(
-      setOnline,
-    );
+    return subscribeToNetworkStatus(setOnline);
   }, []);
 
   /*
@@ -288,9 +211,7 @@ function App() {
    */
 
   useEffect(() => {
-    setHasSavedRoute(
-      getSavedRoute() !== null,
-    );
+    setHasSavedRoute(getSavedRoute() !== null);
   }, [routeInfo]);
 
   /*
@@ -302,10 +223,7 @@ function App() {
   useEffect(() => {
     const map = mapRef.current;
 
-    if (
-      !map ||
-      !map.isStyleLoaded()
-    ) {
+    if (!map || !map.isStyleLoaded()) {
       return;
     }
 
@@ -334,9 +252,7 @@ function App() {
     if (viewMode !== "3D") {
       if (threeSceneRef.current) {
         threeSceneRef.current.dispose();
-
-        threeSceneRef.current =
-          null;
+        threeSceneRef.current = null;
       }
 
       return;
@@ -346,17 +262,11 @@ function App() {
       return;
     }
 
-    const scene =
-      new ThreeScene(
-        threeContainerRef.current,
-      );
+    const scene = new ThreeScene(
+      threeContainerRef.current,
+    );
 
-    threeSceneRef.current =
-      scene;
-
-    /*
-     * Destination landmark click
-     */
+    threeSceneRef.current = scene;
 
     scene.setDestinationLandmarkClickHandler(
       (data) => {
@@ -369,35 +279,21 @@ function App() {
       },
     );
 
-    /*
-     * Existing route
-     */
-
     if (routeInfo) {
       scene.setRoute(
-        routeInfo
-          .geometry
-          .coordinates,
+        routeInfo.geometry.coordinates,
       );
 
       updateThreeDestinationLandmark();
-
       updateThreeNavigation();
     }
 
     return () => {
-      scene.setDestinationLandmarkClickHandler(
-        null,
-      );
-
+      scene.setDestinationLandmarkClickHandler(null);
       scene.dispose();
 
-      if (
-        threeSceneRef.current ===
-        scene
-      ) {
-        threeSceneRef.current =
-          null;
+      if (threeSceneRef.current === scene) {
+        threeSceneRef.current = null;
       }
     };
   }, [viewMode]);
@@ -409,8 +305,7 @@ function App() {
    */
 
   useEffect(() => {
-    const scene =
-      threeSceneRef.current;
+    const scene = threeSceneRef.current;
 
     if (!scene) {
       return;
@@ -418,20 +313,15 @@ function App() {
 
     if (!routeInfo) {
       scene.setRoute([]);
-
       scene.clearDestinationLandmark();
-
       return;
     }
 
     scene.setRoute(
-      routeInfo
-        .geometry
-        .coordinates,
+      routeInfo.geometry.coordinates,
     );
 
     updateThreeDestinationLandmark();
-
     updateThreeNavigation();
   }, [
     routeInfo,
@@ -449,394 +339,239 @@ function App() {
       return;
     }
 
-    const map =
-      new MapLibreMap({
-        container:
-          mapContainerRef.current,
+    const map = new MapLibreMap({
+      container: mapContainerRef.current,
+      style:
+        "https://tiles.openfreemap.org/styles/liberty",
+      center: MAP_CONFIG.center,
+      zoom: MAP_CONFIG.zoom,
+      minZoom: MAP_CONFIG.minZoom,
+      maxZoom: MAP_CONFIG.maxZoom,
+    });
 
-        style:
-          "https://tiles.openfreemap.org/styles/liberty",
-
-        center:
-          MAP_CONFIG.center,
-
-        zoom:
-          MAP_CONFIG.zoom,
-
-        minZoom:
-          MAP_CONFIG.minZoom,
-
-        maxZoom:
-          MAP_CONFIG.maxZoom,
-      });
-
-    mapRef.current =
-      map;
+    mapRef.current = map;
 
     map.addControl(
       new NavigationControl(),
       "top-right",
     );
 
-    /*
-     * Current location marker
-     */
-
     new Marker()
-      .setLngLat(
-        MAP_CONFIG.center,
-      )
+      .setLngLat(MAP_CONFIG.center)
       .addTo(map);
 
+    map.on("load", () => {
+      map.addSource("route", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: [],
+        },
+      });
+
+      routeSourceRef.current =
+        map.getSource("route") as GeoJSONSource;
+
+      if (VISUALIZATION_CONFIG.route.visible) {
+        map.addLayer({
+          id: "route-line",
+          type: "line",
+          source: "route",
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            "line-color":
+              VISUALIZATION_CONFIG.route.color,
+            "line-width":
+              VISUALIZATION_CONFIG.route.width,
+            "line-opacity":
+              VISUALIZATION_CONFIG.route.opacity,
+          },
+        });
+      }
+
+      applySurroundingsAbstraction(
+        map,
+        abstractionEnabled,
+        abstractionLevel,
+      );
+
+      updateRouteEmphasis(
+        map,
+        abstractionEnabled,
+      );
+
+      const savedRoute = getSavedRoute();
+
+      if (savedRoute) {
+        void restoreSavedRoute(
+          map,
+          savedRoute,
+        );
+      }
+    });
+
     /*
-     * MAP LOADED
+     * MAP CLICK → DESTINATION → ROUTE
      */
 
-    map.on(
-      "load",
-      () => {
-        map.addSource(
-          "route",
+    map.on("click", async (event) => {
+      if (!navigator.onLine) {
+        console.log(
+          "Offline mode: new route calculation unavailable.",
+        );
+        return;
+      }
+
+      resetNavigation();
+
+      setDestinationInfo(null);
+      setSelectedLandmark(null);
+      setRouteAIResult(null);
+
+      /*
+       * A newly selected destination automatically
+       * opens Destination + Route Information.
+       */
+
+      setDestinationPanelOpen(true);
+      setRoutePanelOpen(true);
+      setNavigationPanelOpen(false);
+
+      const destination: [number, number] = [
+        event.lngLat.lng,
+        event.lngLat.lat,
+      ];
+
+      if (destinationMarkerRef.current) {
+        destinationMarkerRef.current.remove();
+        destinationMarkerRef.current = null;
+      }
+
+      if (routeSourceRef.current) {
+        routeSourceRef.current.setData({
+          type: "FeatureCollection",
+          features: [],
+        });
+      }
+
+      setRouteInfo(null);
+
+      destinationMarkerRef.current =
+        new Marker()
+          .setLngLat(destination)
+          .addTo(map);
+
+      try {
+        const info =
+          await identifyDestination(
+            destination[0],
+            destination[1],
+          );
+
+        if (info) {
+          setDestinationInfo(info);
+          updateDestinationMarker(info);
+        }
+      } catch (error) {
+        console.error(
+          "Destination identification failed:",
+          error,
+        );
+      }
+
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/route",
           {
-            type: "geojson",
-
-            data: {
-              type:
-                "FeatureCollection",
-
-              features: [],
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
             },
+            body: JSON.stringify({
+              start: {
+                longitude:
+                  MAP_CONFIG.center[0],
+                latitude:
+                  MAP_CONFIG.center[1],
+              },
+              destination: {
+                longitude:
+                  destination[0],
+                latitude:
+                  destination[1],
+              },
+            }),
           },
         );
 
-        routeSourceRef.current =
-          map.getSource(
-            "route",
-          ) as GeoJSONSource;
-
-        /*
-         * Route line
-         */
-
-        if (
-          VISUALIZATION_CONFIG
-            .route
-            .visible
-        ) {
-          map.addLayer({
-            id:
-              "route-line",
-
-            type:
-              "line",
-
-            source:
-              "route",
-
-            layout: {
-              "line-cap":
-                "round",
-
-              "line-join":
-                "round",
-            },
-
-            paint: {
-              "line-color":
-                VISUALIZATION_CONFIG
-                  .route
-                  .color,
-
-              "line-width":
-                VISUALIZATION_CONFIG
-                  .route
-                  .width,
-
-              "line-opacity":
-                VISUALIZATION_CONFIG
-                  .route
-                  .opacity,
-            },
-          });
-        }
-
-        applySurroundingsAbstraction(
-          map,
-          abstractionEnabled,
-          abstractionLevel,
-        );
-
-        updateRouteEmphasis(
-          map,
-          abstractionEnabled,
-        );
-
-        /*
-         * Restore saved route
-         */
-
-        const savedRoute =
-          getSavedRoute();
-
-        if (savedRoute) {
-          void restoreSavedRoute(
-            map,
-            savedRoute,
+        if (!response.ok) {
+          throw new Error(
+            `Routing request failed: ${response.status}`,
           );
         }
-      },
-    );
 
-    /*
-     * ========================================================
-     * MAP CLICK → DESTINATION → ROUTE
-     * ========================================================
-     */
+        const route =
+          (await response.json()) as RouteResponse;
 
-    map.on(
-      "click",
-      async (event) => {
-        if (!navigator.onLine) {
-          console.log(
-            "Offline mode: new route calculation unavailable.",
+        displayRoute(map, route);
+
+        const steps =
+          route.steps.flatMap(
+            (leg) => leg.steps,
           );
 
-          return;
-        }
+        const savedRoute: SavedRoute = {
+          id: crypto.randomUUID(),
+          savedAt: new Date().toISOString(),
 
-        resetNavigation();
+          start: {
+            longitude:
+              MAP_CONFIG.center[0],
+            latitude:
+              MAP_CONFIG.center[1],
+          },
 
-        setDestinationInfo(null);
-        setSelectedLandmark(null);
-        setRouteAIResult(null);
-
-        /*
-         * Automatically open both
-         * Destination + Route Information
-         */
-
-        setDestinationPanelOpen(true);
-        setRoutePanelOpen(true);
-
-        /*
-         * Close other panels
-         */
-
-        setNavigationPanelOpen(false);
-
-        const destination:
-          [number, number] = [
-            event.lngLat.lng,
-            event.lngLat.lat,
-          ];
-
-        /*
-         * Remove old destination marker
-         */
-
-        if (
-          destinationMarkerRef.current
-        ) {
-          destinationMarkerRef.current.remove();
-
-          destinationMarkerRef.current =
-            null;
-        }
-
-        /*
-         * Clear previous route
-         */
-
-        if (
-          routeSourceRef.current
-        ) {
-          routeSourceRef.current.setData({
-            type:
-              "FeatureCollection",
-
-            features: [],
-          });
-        }
-
-        setRouteInfo(null);
-
-        /*
-         * Temporary destination marker
-         */
-
-        destinationMarkerRef.current =
-          new Marker()
-            .setLngLat(
-              destination,
-            )
-            .addTo(map);
-
-        /*
-         * Destination identification
-         */
-
-        try {
-          const info =
-            await identifyDestination(
+          destination: {
+            longitude:
               destination[0],
+            latitude:
               destination[1],
-            );
+          },
 
-          if (info) {
-            setDestinationInfo(
-              info,
-            );
+          distanceMeters:
+            route.distance_meters,
 
-            updateDestinationMarker(
-              info,
-            );
-          }
-        } catch (error) {
-          console.error(
-            "Destination identification failed:",
-            error,
-          );
-        }
+          durationSeconds:
+            route.duration_seconds,
 
-        /*
-         * Route calculation
-         */
+          geometry: route.geometry,
+          steps,
+        };
 
-        try {
-          const response =
-            await fetch(
-              "http://127.0.0.1:8000/route",
-              {
-                method:
-                  "POST",
-
-                headers: {
-                  "Content-Type":
-                    "application/json",
-                },
-
-                body:
-                  JSON.stringify({
-                    start: {
-                      longitude:
-                        MAP_CONFIG
-                          .center[0],
-
-                      latitude:
-                        MAP_CONFIG
-                          .center[1],
-                    },
-
-                    destination: {
-                      longitude:
-                        destination[0],
-
-                      latitude:
-                        destination[1],
-                    },
-                  }),
-              },
-            );
-
-          if (!response.ok) {
-            throw new Error(
-              `Routing request failed: ${response.status}`,
-            );
-          }
-
-          const route =
-            (await response.json()) as RouteResponse;
-
-          displayRoute(
-            map,
-            route,
-          );
-
-          /*
-           * Save route
-           */
-
-          const steps =
-            route.steps.flatMap(
-              (leg) =>
-                leg.steps,
-            );
-
-          const savedRoute:
-            SavedRoute = {
-            id:
-              crypto.randomUUID(),
-
-            savedAt:
-              new Date().toISOString(),
-
-            start: {
-              longitude:
-                MAP_CONFIG
-                  .center[0],
-
-              latitude:
-                MAP_CONFIG
-                  .center[1],
-            },
-
-            destination: {
-              longitude:
-                destination[0],
-
-              latitude:
-                destination[1],
-            },
-
-            distanceMeters:
-              route.distance_meters,
-
-            durationSeconds:
-              route.duration_seconds,
-
-            geometry:
-              route.geometry,
-
-            steps,
-          };
-
-          saveRoute(
-            savedRoute,
-          );
-
-          setHasSavedRoute(
-            true,
-          );
-        } catch (error) {
-          console.error(
-            "Route calculation failed:",
-            error,
-          );
-        }
-      },
-    );
-
-    /*
-     * MapLibre errors
-     */
-
-    map.on(
-      "error",
-      (event) => {
+        saveRoute(savedRoute);
+        setHasSavedRoute(true);
+      } catch (error) {
         console.error(
-          "MapLibre error:",
-          event.error,
+          "Route calculation failed:",
+          error,
         );
-      },
-    );
+      }
+    });
+
+    map.on("error", (event) => {
+      console.error(
+        "MapLibre error:",
+        event.error,
+      );
+    });
 
     return () => {
-      mapRef.current =
-        null;
-
-      routeSourceRef.current =
-        null;
-
+      mapRef.current = null;
+      routeSourceRef.current = null;
       map.remove();
     };
   }, []);
@@ -848,8 +583,7 @@ function App() {
    */
 
   function updateThreeDestinationLandmark() {
-    const scene =
-      threeSceneRef.current;
+    const scene = threeSceneRef.current;
 
     if (
       !scene ||
@@ -860,15 +594,9 @@ function App() {
     }
 
     scene.setDestinationLandmark({
-      name:
-        destinationInfo.name,
-
-      label:
-        destinationInfo.landmarkLabel,
-
-      icon:
-        destinationInfo.landmarkIcon,
-
+      name: destinationInfo.name,
+      label: destinationInfo.landmarkLabel,
+      icon: destinationInfo.landmarkIcon,
       position: [
         destinationInfo.longitude,
         destinationInfo.latitude,
@@ -892,102 +620,49 @@ function App() {
       return;
     }
 
-    const element =
-      marker.getElement();
+    const element = marker.getElement();
 
-    element.innerHTML =
-      "";
-
-    element.style.width =
-      "46px";
-
-    element.style.height =
-      "46px";
-
-    element.style.borderRadius =
-      "50%";
-
-    element.style.background =
-      "white";
-
+    element.innerHTML = "";
+    element.style.width = "46px";
+    element.style.height = "46px";
+    element.style.borderRadius = "50%";
+    element.style.background = "white";
     element.style.border =
       "3px solid #2563eb";
-
     element.style.boxShadow =
       "0 3px 10px rgba(0,0,0,0.3)";
-
-    element.style.display =
-      "flex";
-
-    element.style.alignItems =
-      "center";
-
-    element.style.justifyContent =
-      "center";
-
-    element.style.fontSize =
-      "25px";
-
-    element.style.cursor =
-      "pointer";
-
+    element.style.display = "flex";
+    element.style.alignItems = "center";
+    element.style.justifyContent = "center";
+    element.style.fontSize = "25px";
+    element.style.cursor = "pointer";
     element.style.transform =
       "translateY(-50%)";
-
     element.textContent =
       info.landmarkIcon;
 
-    /*
-     * Destination label
-     */
-
     const label =
-      document.createElement(
-        "div",
-      );
+      document.createElement("div");
 
     label.textContent =
       info.landmarkLabel;
 
-    label.style.position =
-      "absolute";
-
-    label.style.bottom =
-      "48px";
-
-    label.style.left =
-      "50%";
-
+    label.style.position = "absolute";
+    label.style.bottom = "48px";
+    label.style.left = "50%";
     label.style.transform =
       "translateX(-50%)";
-
-    label.style.background =
-      "#2563eb";
-
-    label.style.color =
-      "white";
-
-    label.style.padding =
-      "4px 8px";
-
-    label.style.borderRadius =
-      "6px";
-
-    label.style.fontSize =
-      "11px";
-
-    label.style.fontWeight =
-      "bold";
-
-    label.style.whiteSpace =
-      "nowrap";
-
+    label.style.background = "#2563eb";
+    label.style.color = "white";
+    label.style.padding = "4px 8px";
+    label.style.borderRadius = "6px";
+    label.style.fontSize = "11px";
+    label.style.fontWeight = "bold";
+    label.style.whiteSpace = "nowrap";
     label.style.boxShadow =
       "0 2px 6px rgba(0,0,0,0.25)";
 
-    element.appendChild(
-      label,
-    );
+    element.appendChild(label);
 
     element.title =
       `${info.landmarkIcon} ${info.landmarkLabel}: ${info.name}`;
@@ -1014,36 +689,23 @@ function App() {
             .opacity
             .normal;
 
-    const style =
-      map.getStyle();
+    const style = map.getStyle();
 
-    for (
-      const layer of
-      style.layers ?? []
-    ) {
-      if (
-        layer.id ===
-        "route-line"
-      ) {
+    for (const layer of style.layers ?? []) {
+      if (layer.id === "route-line") {
         continue;
       }
 
       if (
-        layer.type !==
-          "fill" &&
-        layer.type !==
-          "line" &&
-        layer.type !==
-          "symbol"
+        layer.type !== "fill" &&
+        layer.type !== "line" &&
+        layer.type !== "symbol"
       ) {
         continue;
       }
 
       try {
-        if (
-          layer.type ===
-          "fill"
-        ) {
+        if (layer.type === "fill") {
           map.setPaintProperty(
             layer.id,
             "fill-opacity",
@@ -1051,10 +713,7 @@ function App() {
           );
         }
 
-        if (
-          layer.type ===
-          "line"
-        ) {
+        if (layer.type === "line") {
           map.setPaintProperty(
             layer.id,
             "line-opacity",
@@ -1062,10 +721,7 @@ function App() {
           );
         }
 
-        if (
-          layer.type ===
-          "symbol"
-        ) {
+        if (layer.type === "symbol") {
           map.setPaintProperty(
             layer.id,
             "text-opacity",
@@ -1094,11 +750,7 @@ function App() {
     map: MapLibreMap,
     abstractionActive: boolean,
   ) {
-    if (
-      !map.getLayer(
-        "route-line",
-      )
-    ) {
+    if (!map.getLayer("route-line")) {
       return;
     }
 
@@ -1145,105 +797,58 @@ function App() {
   ) {
     stopNavigationAnimation();
 
-    navigationActiveRef.current =
-      false;
+    navigationActiveRef.current = false;
 
-    setNavigationActive(
-      false,
-    );
-
-    setNavigationCompleted(
-      false,
-    );
-
-    setRouteInfo(
-      route,
-    );
+    setNavigationActive(false);
+    setNavigationCompleted(false);
+    setRouteInfo(route);
 
     navigationControllerRef.current?.setRoute(
-      route
-        .geometry
-        .coordinates,
+      route.geometry.coordinates,
     );
 
     setNavigationPosition(
-      route
-        .geometry
-        .coordinates[0] ??
-        null,
+      route.geometry.coordinates[0] ?? null,
     );
 
-    setNavigationDirection(
-      "straight",
-    );
+    setNavigationDirection("straight");
+    setTurnDetected(false);
+    setDistanceProgress(0);
 
-    setTurnDetected(
-      false,
-    );
-
-    setDistanceProgress(
-      0,
-    );
-
-    /*
-     * Route source
-     */
-
-    if (
-      routeSourceRef.current
-    ) {
+    if (routeSourceRef.current) {
       routeSourceRef.current.setData({
-        type:
-          "Feature",
-
+        type: "Feature",
         properties: {},
-
-        geometry:
-          route.geometry,
+        geometry: route.geometry,
       });
     }
 
-    /*
-     * Fit map
-     */
-
-    const bounds =
-      new LngLatBounds();
+    const bounds = new LngLatBounds();
 
     for (
       const coordinate of
-      route
-        .geometry
-        .coordinates
+      route.geometry.coordinates
     ) {
-      bounds.extend(
-        coordinate,
-      );
+      bounds.extend(coordinate);
     }
 
-    map.fitBounds(
-      bounds,
-      {
-        padding: {
-          top: 100,
-          bottom: 100,
-          left: 380,
-          right: 100,
-        },
-
-        maxZoom: 16,
-
-        duration: 1000,
+    map.fitBounds(bounds, {
+      padding: {
+        top: 100,
+        bottom: 100,
+        left: 380,
+        right: 100,
       },
-    );
+      maxZoom: 16,
+      duration: 1000,
+    });
 
     /*
-     * Route information automatically opens
+     * Route Information automatically opens
+     * whenever a route is successfully created.
      */
 
-    setRoutePanelOpen(
-      true,
-    );
+    setRoutePanelOpen(true);
   }
 
   /*
@@ -1254,17 +859,12 @@ function App() {
 
   useEffect(() => {
     if (!routeInfo) {
-      setRouteAIResult(
-        null,
-      );
-
+      setRouteAIResult(null);
       return;
     }
 
     const coordinates =
-      routeInfo
-        .geometry
-        .coordinates;
+      routeInfo.geometry.coordinates;
 
     const destination =
       coordinates[
@@ -1277,80 +877,54 @@ function App() {
 
     const steps =
       routeInfo.steps.flatMap(
-        (leg) =>
-          leg.steps,
+        (leg) => leg.steps,
       );
 
-    const result =
-      analyzeRoute({
-        routeGeometry:
-          coordinates,
+    const result = analyzeRoute({
+      routeGeometry: coordinates,
 
-        distanceMeters:
-          routeInfo
-            .distance_meters,
+      distanceMeters:
+        routeInfo.distance_meters,
 
-        durationSeconds:
-          routeInfo
-            .duration_seconds,
+      durationSeconds:
+        routeInfo.duration_seconds,
 
-        steps,
+      steps,
 
-        nearbyLandmarks: [],
+      nearbyLandmarks: [],
 
-        destination: {
-          name:
-            destinationInfo?.name ??
-            "Route destination",
+      destination: {
+        name:
+          destinationInfo?.name ??
+          "Route destination",
 
-          category:
-            destinationInfo?.category ??
-            "destination",
+        category:
+          destinationInfo?.category ??
+          "destination",
 
-          longitude:
-            destination[0],
+        longitude:
+          destination[0],
 
-          latitude:
-            destination[1],
-        },
+        latitude:
+          destination[1],
+      },
 
-        currentRoutePosition:
-          coordinates[0] ??
-          null,
-      });
+      currentRoutePosition:
+        coordinates[0] ?? null,
+    });
 
-    setRouteAIResult(
-      result,
-    );
-
-    /*
-     * Apply AI visualization recommendation
-     */
+    setRouteAIResult(result);
 
     const recommended =
-      result
-        .intelligence
+      result.intelligence
         .recommendedVisualization;
 
-    if (
-      recommended ===
-      "normal"
-    ) {
-      setAbstractionEnabled(
-        false,
-      );
-
-      setAbstractionLevel(
-        "normal",
-      );
+    if (recommended === "normal") {
+      setAbstractionEnabled(false);
+      setAbstractionLevel("normal");
     } else {
-      setAbstractionEnabled(
-        true,
-      );
-
-      setAbstractionLevel(
-        recommended,
-      );
+      setAbstractionEnabled(true);
+      setAbstractionLevel(recommended);
     }
   }, [
     routeInfo,
@@ -1367,15 +941,12 @@ function App() {
     map: MapLibreMap,
     savedRoute: SavedRoute,
   ) {
-    const restoredRoute:
-      RouteResponse = {
+    const restoredRoute: RouteResponse = {
       distance_meters:
-        savedRoute
-          .distanceMeters,
+        savedRoute.distanceMeters,
 
       duration_seconds:
-        savedRoute
-          .durationSeconds,
+        savedRoute.durationSeconds,
 
       geometry:
         savedRoute.geometry,
@@ -1388,72 +959,34 @@ function App() {
       ],
     };
 
-    /*
-     * Remove old marker
-     */
-
-    if (
-      destinationMarkerRef.current
-    ) {
+    if (destinationMarkerRef.current) {
       destinationMarkerRef.current.remove();
-
-      destinationMarkerRef.current =
-        null;
+      destinationMarkerRef.current = null;
     }
-
-    /*
-     * Create restored marker
-     */
 
     destinationMarkerRef.current =
       new Marker()
         .setLngLat([
-          savedRoute
-            .destination
-            .longitude,
-
-          savedRoute
-            .destination
-            .latitude,
+          savedRoute.destination.longitude,
+          savedRoute.destination.latitude,
         ])
         .addTo(map);
 
-    /*
-     * Re-identify destination
-     */
+    setDestinationInfo(null);
 
-    setDestinationInfo(
-      null,
-    );
-
-    setDestinationPanelOpen(
-      true,
-    );
-
-    setRoutePanelOpen(
-      true,
-    );
+    setDestinationPanelOpen(true);
+    setRoutePanelOpen(true);
 
     try {
       const info =
         await identifyDestination(
-          savedRoute
-            .destination
-            .longitude,
-
-          savedRoute
-            .destination
-            .latitude,
+          savedRoute.destination.longitude,
+          savedRoute.destination.latitude,
         );
 
       if (info) {
-        setDestinationInfo(
-          info,
-        );
-
-        updateDestinationMarker(
-          info,
-        );
+        setDestinationInfo(info);
+        updateDestinationMarker(info);
       }
     } catch (error) {
       console.error(
@@ -1461,10 +994,6 @@ function App() {
         error,
       );
     }
-
-    /*
-     * Display route
-     */
 
     displayRoute(
       map,
@@ -1479,16 +1008,10 @@ function App() {
    */
 
   function useSavedRoute() {
-    const savedRoute =
-      getSavedRoute();
+    const savedRoute = getSavedRoute();
+    const map = mapRef.current;
 
-    const map =
-      mapRef.current;
-
-    if (
-      !savedRoute ||
-      !map
-    ) {
+    if (!savedRoute || !map) {
       return;
     }
 
@@ -1497,13 +1020,8 @@ function App() {
       savedRoute,
     );
 
-    setHasSavedRoute(
-      true,
-    );
-
-    setMenuOpen(
-      false,
-    );
+    setHasSavedRoute(true);
+    setMenuOpen(false);
   }
 
   /*
@@ -1535,9 +1053,7 @@ function App() {
     }
 
     const coordinates =
-      routeInfo
-        .geometry
-        .coordinates;
+      routeInfo.geometry.coordinates;
 
     const nextIndex =
       Math.min(
@@ -1546,9 +1062,7 @@ function App() {
       );
 
     const nextPosition =
-      coordinates[
-        nextIndex
-      ];
+      coordinates[nextIndex];
 
     if (!nextPosition) {
       return;
@@ -1574,10 +1088,7 @@ function App() {
   function startNavigation() {
     if (
       !routeInfo ||
-      routeInfo
-        .geometry
-        .coordinates
-        .length < 2
+      routeInfo.geometry.coordinates.length < 2
     ) {
       return;
     }
@@ -1585,50 +1096,24 @@ function App() {
     stopNavigationAnimation();
 
     navigationControllerRef.current?.setRoute(
-      routeInfo
-        .geometry
-        .coordinates,
+      routeInfo.geometry.coordinates,
     );
 
-    navigationActiveRef.current =
-      true;
+    navigationActiveRef.current = true;
 
-    setNavigationActive(
-      true,
-    );
-
-    setNavigationCompleted(
-      false,
-    );
+    setNavigationActive(true);
+    setNavigationCompleted(false);
 
     setNavigationPosition(
-      routeInfo
-        .geometry
-        .coordinates[0],
+      routeInfo.geometry.coordinates[0],
     );
 
-    setDistanceProgress(
-      0,
-    );
+    setDistanceProgress(0);
+    setNavigationDirection("straight");
+    setTurnDetected(false);
 
-    setNavigationDirection(
-      "straight",
-    );
-
-    setTurnDetected(
-      false,
-    );
-
-    /*
-     * Dynamic navigation uses 3D
-     */
-
-    if (
-      viewMode !== "3D"
-    ) {
-      setViewMode(
-        "3D",
-      );
+    if (viewMode !== "3D") {
+      setViewMode("3D");
     }
 
     navigationAnimationRef.current =
@@ -1644,13 +1129,8 @@ function App() {
    */
 
   function pauseNavigation() {
-    navigationActiveRef.current =
-      false;
-
-    setNavigationActive(
-      false,
-    );
-
+    navigationActiveRef.current = false;
+    setNavigationActive(false);
     stopNavigationAnimation();
   }
 
@@ -1661,43 +1141,22 @@ function App() {
    */
 
   function resetNavigation() {
-    navigationActiveRef.current =
-      false;
-
+    navigationActiveRef.current = false;
     stopNavigationAnimation();
 
     navigationControllerRef.current?.setRoute(
-      routeInfo
-        ?.geometry
-        .coordinates ??
-        [],
+      routeInfo?.geometry.coordinates ?? [],
     );
 
-    setNavigationActive(
-      false,
-    );
-
-    setNavigationCompleted(
-      false,
-    );
-
-    setNavigationDirection(
-      "straight",
-    );
-
-    setTurnDetected(
-      false,
-    );
-
-    setDistanceProgress(
-      0,
-    );
+    setNavigationActive(false);
+    setNavigationCompleted(false);
+    setNavigationDirection("straight");
+    setTurnDetected(false);
+    setDistanceProgress(0);
 
     setNavigationPosition(
-      routeInfo
-        ?.geometry
-        .coordinates[0] ??
-        null,
+      routeInfo?.geometry.coordinates[0] ??
+      null,
     );
 
     if (
@@ -1705,13 +1164,10 @@ function App() {
       threeSceneRef.current
     ) {
       threeSceneRef.current.setRoute(
-        routeInfo
-          .geometry
-          .coordinates,
+        routeInfo.geometry.coordinates,
       );
 
       updateThreeDestinationLandmark();
-
       updateThreeNavigation();
     }
   }
@@ -1731,8 +1187,7 @@ function App() {
         navigationAnimationRef.current,
       );
 
-      navigationAnimationRef.current =
-        null;
+      navigationAnimationRef.current = null;
     }
   }
 
@@ -1743,12 +1198,8 @@ function App() {
    */
 
   function runNavigationFrame() {
-    if (
-      !navigationActiveRef.current
-    ) {
-      navigationAnimationRef.current =
-        null;
-
+    if (!navigationActiveRef.current) {
+      navigationAnimationRef.current = null;
       return;
     }
 
@@ -1756,47 +1207,28 @@ function App() {
       navigationControllerRef.current;
 
     if (!controller) {
-      navigationAnimationRef.current =
-        null;
-
+      navigationAnimationRef.current = null;
       return;
     }
 
-    controller.advance(
-      0.025,
-    );
+    controller.advance(0.025);
 
     const state =
       controller.getState();
 
-    setNavigationPosition(
-      state.position,
-    );
-
-    setNavigationDirection(
-      state.direction,
-    );
-
-    setTurnDetected(
-      state.turnDetected,
-    );
-
+    setNavigationPosition(state.position);
+    setNavigationDirection(state.direction);
+    setTurnDetected(state.turnDetected);
     setDistanceProgress(
       state.distanceProgress,
     );
-
-    /*
-     * Update 3D scene
-     */
 
     if (
       state.position &&
       routeInfo
     ) {
       const coordinates =
-        routeInfo
-          .geometry
-          .coordinates;
+        routeInfo.geometry.coordinates;
 
       const nextIndex =
         Math.min(
@@ -1805,9 +1237,7 @@ function App() {
         );
 
       const nextPosition =
-        coordinates[
-          nextIndex
-        ];
+        coordinates[nextIndex];
 
       if (nextPosition) {
         const scene =
@@ -1827,31 +1257,14 @@ function App() {
       }
     }
 
-    /*
-     * Arrival
-     */
+    if (state.completed) {
+      navigationActiveRef.current = false;
 
-    if (
-      state.completed
-    ) {
-      navigationActiveRef.current =
-        false;
+      setNavigationActive(false);
+      setNavigationCompleted(true);
+      setDistanceProgress(1);
 
-      setNavigationActive(
-        false,
-      );
-
-      setNavigationCompleted(
-        true,
-      );
-
-      setDistanceProgress(
-        1,
-      );
-
-      navigationAnimationRef.current =
-        null;
-
+      navigationAnimationRef.current = null;
       return;
     }
 
@@ -1864,110 +1277,68 @@ function App() {
   /*
    * ============================================================
    * MENU ITEM HANDLER
-   *
-   * This is the important new behavior.
-   * Menu shows names only.
-   * Clicking a name opens that panel.
    * ============================================================
+   *
+   * The ☰ menu shows names only.
+   *
+   * Destination Information:
+   *   opens destination panel.
+   *
+   * Route Information:
+   *   opens route panel again after it was closed.
+   *
+   * Navigation:
+   *   opens navigation panel.
+   *
+   * Saved Route:
+   *   restores the saved route.
+   *
+   * Map Options:
+   *   opens the map options panel.
    */
 
   function openMenuPanel(
     panel: PanelName,
   ) {
-    /*
-     * Close everything first
-     */
-
-    setDestinationPanelOpen(
-      false,
-    );
-
-    setRoutePanelOpen(
-      false,
-    );
-
-    setNavigationPanelOpen(
-      false,
-    );
-
-    setOptionsOpen(
-      false,
-    );
-
-    /*
-     * Open requested item
-     */
+    setDestinationPanelOpen(false);
+    setRoutePanelOpen(false);
+    setNavigationPanelOpen(false);
+    setOptionsOpen(false);
 
     if (
-      panel ===
-      "destination"
+      panel === "destination" &&
+      destinationInfo
     ) {
-      if (destinationInfo) {
-        setDestinationPanelOpen(
-          true,
-        );
-      }
+      setDestinationPanelOpen(true);
     }
 
     if (
-      panel ===
-      "route"
+      panel === "route" &&
+      routeInfo
     ) {
-      if (routeInfo) {
-        setRoutePanelOpen(
-          true,
-        );
-      }
+      setRoutePanelOpen(true);
     }
 
     if (
-      panel ===
-      "navigation"
+      panel === "navigation" &&
+      routeInfo
     ) {
-      if (routeInfo) {
-        setNavigationPanelOpen(
-          true,
-        );
-      }
+      setNavigationPanelOpen(true);
     }
 
     if (
-      panel ===
-      "savedRoute"
+      panel === "savedRoute" &&
+      hasSavedRoute
     ) {
-      if (hasSavedRoute) {
-        useSavedRoute();
-
-        return;
-      }
+      useSavedRoute();
+      return;
     }
 
-    if (
-      panel ===
-      "mapView"
-    ) {
-      /*
-       * Map View simply closes the menu.
-       * 2D / 3D buttons remain available.
-       */
+    if (panel === "mapOptions") {
+      setOptionsOpen(true);
     }
 
-    if (
-      panel ===
-      "mapOptions"
-    ) {
-      setOptionsOpen(
-        true,
-      );
-    }
-
-    /*
-     * Menu closes after selection
-     */
-
-    setMenuOpen(
-      false,
-    );
+    setMenuOpen(false);
   }
 
   /*
@@ -1979,8 +1350,7 @@ function App() {
   const distanceKm =
     routeInfo
       ? (
-          routeInfo
-            .distance_meters /
+          routeInfo.distance_meters /
           1000
         ).toFixed(2)
       : null;
@@ -1988,28 +1358,22 @@ function App() {
   const durationMinutes =
     routeInfo
       ? Math.ceil(
-          routeInfo
-            .duration_seconds /
+          routeInfo.duration_seconds /
           60,
         )
       : null;
 
   const steps =
-    routeInfo
-      ?.steps
-      ?.flatMap(
-        (leg) =>
-          leg.steps,
-      ) ?? [];
+    routeInfo?.steps?.flatMap(
+      (leg) => leg.steps,
+    ) ?? [];
 
   const visualizationStatus =
     !abstractionEnabled
       ? "Normal"
-      : abstractionLevel ===
-          "normal"
+      : abstractionLevel === "normal"
         ? "Abstraction: Normal"
-        : abstractionLevel ===
-            "reduced"
+        : abstractionLevel === "reduced"
           ? "Abstraction: Reduced"
           : "Abstraction: Minimal";
 
@@ -2022,40 +1386,21 @@ function App() {
   return (
     <main
       style={{
-        width:
-          "100vw",
-
-        height:
-          "100vh",
-
-        margin:
-          0,
-
-        padding:
-          0,
-
-        position:
-          "relative",
-
-        overflow:
-          "hidden",
+        width: "100vw",
+        height: "100vh",
+        margin: 0,
+        padding: 0,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* ======================================================
-          2D MAP
-          ====================================================== */}
+      {/* 2D MAP */}
 
       <div
-        ref={
-          mapContainerRef
-        }
+        ref={mapContainerRef}
         style={{
-          width:
-            "100%",
-
-          height:
-            "100%",
-
+          width: "100%",
+          height: "100%",
           display:
             viewMode === "2D"
               ? "block"
@@ -2063,21 +1408,13 @@ function App() {
         }}
       />
 
-      {/* ======================================================
-          3D MAP
-          ====================================================== */}
+      {/* 3D MAP */}
 
       <div
-        ref={
-          threeContainerRef
-        }
+        ref={threeContainerRef}
         style={{
-          width:
-            "100%",
-
-          height:
-            "100%",
-
+          width: "100%",
+          height: "100%",
           display:
             viewMode === "3D"
               ? "block"
@@ -2085,269 +1422,116 @@ function App() {
         }}
       />
 
-      {/* ======================================================
-          MENU BUTTON
-          ====================================================== */}
+      {/* MENU BUTTON */}
 
       <button
         onClick={() =>
           setMenuOpen(
-            (value) =>
-              !value,
+            (value) => !value,
           )
         }
         title="Open menu"
         aria-label="Open menu"
         style={{
-          position:
-            "absolute",
-
-          top:
-            "20px",
-
-          left:
-            "20px",
-
-          width:
-            "44px",
-
-          height:
-            "44px",
-
-          border:
-            "none",
-
-          borderRadius:
-            "10px",
-
-          background:
-            "white",
-
+          position: "absolute",
+          top: "20px",
+          left: "20px",
+          width: "44px",
+          height: "44px",
+          border: "none",
+          borderRadius: "10px",
+          background: "white",
           boxShadow:
             "0 3px 12px rgba(0,0,0,0.25)",
-
-          cursor:
-            "pointer",
-
-          fontSize:
-            "22px",
-
-          fontWeight:
-            "bold",
-
-          zIndex:
-            40,
+          cursor: "pointer",
+          fontSize: "22px",
+          fontWeight: "bold",
+          zIndex: 40,
         }}
       >
         ☰
       </button>
 
-      {/* ======================================================
-          TOP STATUS BAR
-          ====================================================== */}
+      {/* TOP STATUS BAR */}
 
       <div
         style={{
-          position:
-            "absolute",
-
-          top:
-            "20px",
-
-          right:
-            "20px",
-
-          display:
-            "flex",
-
-          gap:
-            "8px",
-
-          alignItems:
-            "center",
-
-          zIndex:
-            30,
-
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          display: "flex",
+          gap: "8px",
+          alignItems: "center",
+          zIndex: 30,
           fontFamily:
             "Arial, sans-serif",
-
-          flexWrap:
-            "wrap",
-
-          justifyContent:
-            "flex-end",
+          flexWrap: "wrap",
+          justifyContent: "flex-end",
         }}
       >
-        {/* Online */}
-
-        <div
-          style={{
-            background:
-              "white",
-
-            padding:
-              "8px 12px",
-
-            borderRadius:
-              "8px",
-
-            boxShadow:
-              "0 2px 8px rgba(0,0,0,0.2)",
-
-            fontSize:
-              "14px",
-
-            fontWeight:
-              "bold",
-          }}
-        >
+        <div style={statusBoxStyle}>
           {online
             ? "🟢 Online"
             : "🔴 Offline"}
         </div>
 
-        {/* Visualization */}
-
-        <div
-          style={{
-            background:
-              "white",
-
-            padding:
-              "8px 12px",
-
-            borderRadius:
-              "8px",
-
-            boxShadow:
-              "0 2px 8px rgba(0,0,0,0.2)",
-
-            fontSize:
-              "14px",
-
-            fontWeight:
-              "bold",
-          }}
-        >
-          🎯{" "}
-          {visualizationStatus}
+        <div style={statusBoxStyle}>
+          🎯 {visualizationStatus}
         </div>
 
-        {/* 2D */}
-
         <button
-          onClick={() =>
-            setViewMode(
-              "2D",
-            )
-          }
+          onClick={() => setViewMode("2D")}
           style={{
-            padding:
-              "8px 12px",
-
-            borderRadius:
-              "8px",
-
-            border:
-              "1px solid #ccc",
-
+            ...viewButtonStyle,
             background:
               viewMode === "2D"
                 ? "#2563eb"
                 : "white",
-
             color:
               viewMode === "2D"
                 ? "white"
                 : "black",
-
-            fontWeight:
-              "bold",
-
-            cursor:
-              "pointer",
           }}
         >
           2D
         </button>
 
-        {/* 3D */}
-
         <button
-          onClick={() =>
-            setViewMode(
-              "3D",
-            )
-          }
+          onClick={() => setViewMode("3D")}
           style={{
-            padding:
-              "8px 12px",
-
-            borderRadius:
-              "8px",
-
-            border:
-              "1px solid #ccc",
-
+            ...viewButtonStyle,
             background:
               viewMode === "3D"
                 ? "#2563eb"
                 : "white",
-
             color:
               viewMode === "3D"
                 ? "white"
                 : "black",
-
-            fontWeight:
-              "bold",
-
-            cursor:
-              "pointer",
           }}
         >
           3D
         </button>
 
-        {/* Options */}
-
         <button
           onClick={() =>
             setOptionsOpen(
-              (value) =>
-                !value,
+              (value) => !value,
             )
           }
           title="Map options"
           aria-label="Map options"
           style={{
-            width:
-              "44px",
-
-            height:
-              "44px",
-
-            border:
-              "none",
-
-            borderRadius:
-              "10px",
-
-            background:
-              "white",
-
+            width: "44px",
+            height: "44px",
+            border: "none",
+            borderRadius: "10px",
+            background: "white",
             boxShadow:
               "0 3px 12px rgba(0,0,0,0.25)",
-
-            cursor:
-              "pointer",
-
-            fontSize:
-              "22px",
-
-            fontWeight:
-              "bold",
+            cursor: "pointer",
+            fontSize: "22px",
+            fontWeight: "bold",
           }}
         >
           ⋮
@@ -2356,70 +1540,40 @@ function App() {
 
       {/* ======================================================
           ☰ MENU
-          
-          IMPORTANT:
-          ONLY NAMES ARE SHOWN HERE.
+          NAMES ONLY
           ====================================================== */}
 
       {menuOpen && (
         <section
           style={{
-            position:
-              "absolute",
-
-            top:
-              "76px",
-
-            left:
-              "20px",
-
-            background:
-              "white",
-
-            padding:
-              "10px",
-
-            borderRadius:
-              "12px",
-
+            position: "absolute",
+            top: "76px",
+            left: "20px",
+            background: "white",
+            padding: "10px",
+            borderRadius: "12px",
             boxShadow:
               "0 4px 18px rgba(0,0,0,0.25)",
-
-            width:
-              "250px",
-
+            width: "250px",
             maxWidth:
               "calc(100vw - 40px)",
-
             fontFamily:
               "Arial, sans-serif",
-
-            zIndex:
-              39,
+            zIndex: 39,
           }}
         >
           <div
             style={{
-              padding:
-                "8px 10px",
-
-              fontWeight:
-                "bold",
-
-              fontSize:
-                "15px",
-
+              padding: "8px 10px",
+              fontWeight: "bold",
+              fontSize: "15px",
               borderBottom:
                 "1px solid #e5e7eb",
-
-              marginBottom:
-                "4px",
+              marginBottom: "4px",
             }}
           >
             🗺️ Mapathon Engine
           </div>
-
-          {/* Destination Information */}
 
           <button
             onClick={() =>
@@ -2427,12 +1581,9 @@ function App() {
                 "destination",
               )
             }
-            disabled={
-              !destinationInfo
-            }
+            disabled={!destinationInfo}
             style={{
               ...menuItemStyle,
-
               opacity:
                 destinationInfo
                   ? 1
@@ -2442,30 +1593,19 @@ function App() {
             📍 Destination Information
           </button>
 
-          {/* Route Information */}
-
           <button
             onClick={() =>
-              openMenuPanel(
-                "route",
-              )
+              openMenuPanel("route")
             }
-            disabled={
-              !routeInfo
-            }
+            disabled={!routeInfo}
             style={{
               ...menuItemStyle,
-
               opacity:
-                routeInfo
-                  ? 1
-                  : 0.45,
+                routeInfo ? 1 : 0.45,
             }}
           >
             🧭 Route Information
           </button>
-
-          {/* Navigation */}
 
           <button
             onClick={() =>
@@ -2473,22 +1613,15 @@ function App() {
                 "navigation",
               )
             }
-            disabled={
-              !routeInfo
-            }
+            disabled={!routeInfo}
             style={{
               ...menuItemStyle,
-
               opacity:
-                routeInfo
-                  ? 1
-                  : 0.45,
+                routeInfo ? 1 : 0.45,
             }}
           >
             🚗 Navigation
           </button>
-
-          {/* Saved Route */}
 
           <button
             onClick={() =>
@@ -2496,12 +1629,9 @@ function App() {
                 "savedRoute",
               )
             }
-            disabled={
-              !hasSavedRoute
-            }
+            disabled={!hasSavedRoute}
             style={{
               ...menuItemStyle,
-
               opacity:
                 hasSavedRoute
                   ? 1
@@ -2511,32 +1641,13 @@ function App() {
             💾 Saved Route
           </button>
 
-          {/* Map View */}
-
-          <button
-            onClick={() =>
-              openMenuPanel(
-                "mapView",
-              )
-            }
-            style={{
-              ...menuItemStyle,
-            }}
-          >
-            🗺️ Map View
-          </button>
-
-          {/* Map Options */}
-
           <button
             onClick={() =>
               openMenuPanel(
                 "mapOptions",
               )
             }
-            style={{
-              ...menuItemStyle,
-            }}
+            style={menuItemStyle}
           >
             ⚙️ Map Options
           </button>
@@ -2544,112 +1655,42 @@ function App() {
       )}
 
       {/* ======================================================
-          THREE DOT OPTIONS
+          MAP OPTIONS
           ====================================================== */}
 
       {optionsOpen && (
         <section
           style={{
-            position:
-              "absolute",
-
-            top:
-              "76px",
-
-            right:
-              "20px",
-
-            background:
-              "white",
-
-            padding:
-              "14px",
-
-            borderRadius:
-              "10px",
-
+            position: "absolute",
+            top: "76px",
+            right: "20px",
+            background: "white",
+            padding: "14px",
+            borderRadius: "10px",
             boxShadow:
               "0 3px 12px rgba(0,0,0,0.22)",
-
-            minWidth:
-              "220px",
-
-            zIndex:
-              35,
-
+            minWidth: "220px",
+            zIndex: 35,
             fontFamily:
               "Arial, sans-serif",
           }}
         >
-          <div
-            style={{
-              display:
-                "flex",
-
-              justifyContent:
-                "space-between",
-
-              alignItems:
-                "center",
-            }}
-          >
-            <strong>
-              Map Options
-            </strong>
-
-            <button
-              onClick={() =>
-                setOptionsOpen(
-                  false,
-                )
-              }
-              style={{
-                border:
-                  "none",
-
-                background:
-                  "#f1f5f9",
-
-                borderRadius:
-                  "6px",
-
-                width:
-                  "28px",
-
-                height:
-                  "28px",
-
-                cursor:
-                  "pointer",
-
-                fontSize:
-                  "18px",
-              }}
-            >
-              ×
-            </button>
-          </div>
-
-          {/* Visual abstraction */}
+          <PanelHeader
+            title="⚙️ Map Options"
+            onClose={() =>
+              setOptionsOpen(false)
+            }
+          />
 
           {viewMode === "2D" && (
             <>
               <label
                 style={{
-                  display:
-                    "flex",
-
-                  alignItems:
-                    "center",
-
-                  gap:
-                    "8px",
-
-                  marginTop:
-                    "14px",
-
-                  cursor:
-                    "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginTop: "14px",
+                  cursor: "pointer",
                 }}
               >
                 <input
@@ -2657,13 +1698,9 @@ function App() {
                   checked={
                     abstractionEnabled
                   }
-                  onChange={(
-                    event,
-                  ) =>
+                  onChange={(event) =>
                     setAbstractionEnabled(
-                      event
-                        .target
-                        .checked,
+                      event.target.checked,
                     )
                   }
                 />
@@ -2673,50 +1710,29 @@ function App() {
 
               <label
                 style={{
-                  display:
-                    "block",
-
-                  marginTop:
-                    "10px",
-
-                  fontSize:
-                    "13px",
+                  display: "block",
+                  marginTop: "10px",
+                  fontSize: "13px",
                 }}
               >
                 Abstraction level
 
                 <select
-                  value={
-                    abstractionLevel
-                  }
-                  onChange={(
-                    event,
-                  ) =>
+                  value={abstractionLevel}
+                  onChange={(event) =>
                     setAbstractionLevel(
-                      event
-                        .target
-                        .value as AbstractionLevel,
+                      event.target.value as AbstractionLevel,
                     )
                   }
                   disabled={
                     !abstractionEnabled
                   }
                   style={{
-                    display:
-                      "block",
-
-                    width:
-                      "100%",
-
-                    marginTop:
-                      "5px",
-
-                    padding:
-                      "6px",
-
-                    borderRadius:
-                      "6px",
-
+                    display: "block",
+                    width: "100%",
+                    marginTop: "5px",
+                    padding: "6px",
+                    borderRadius: "6px",
                     border:
                       "1px solid #ccc",
                   }}
@@ -2739,62 +1755,32 @@ function App() {
 
           <hr />
 
-          <strong>
-            Saved Route
-          </strong>
+          <strong>Saved Route</strong>
 
-          {hasSavedRoute && (
+          {hasSavedRoute ? (
             <button
-              onClick={
-                useSavedRoute
-              }
+              onClick={useSavedRoute}
               style={{
-                display:
-                  "block",
-
-                width:
-                  "100%",
-
-                marginTop:
-                  "8px",
-
-                background:
-                  "#2563eb",
-
-                color:
-                  "white",
-
-                border:
-                  "none",
-
-                padding:
-                  "9px",
-
-                borderRadius:
-                  "7px",
-
-                cursor:
-                  "pointer",
-
-                fontWeight:
-                  "bold",
+                display: "block",
+                width: "100%",
+                marginTop: "8px",
+                background: "#2563eb",
+                color: "white",
+                border: "none",
+                padding: "9px",
+                borderRadius: "7px",
+                cursor: "pointer",
+                fontWeight: "bold",
               }}
             >
               📍 Restore Saved Route
             </button>
-          )}
-
-          {!hasSavedRoute && (
+          ) : (
             <div
               style={{
-                marginTop:
-                  "8px",
-
-                fontSize:
-                  "12px",
-
-                color:
-                  "#666",
+                marginTop: "8px",
+                fontSize: "12px",
+                color: "#666",
               }}
             >
               No saved route available.
@@ -2811,38 +1797,20 @@ function App() {
         destinationPanelOpen && (
           <section
             style={{
-              position:
-                "absolute",
-
-              top:
-                "80px",
-
-              left:
-                "20px",
-
-              background:
-                "white",
-
-              padding:
-                "16px",
-
-              borderRadius:
-                "12px",
-
+              position: "absolute",
+              top: "80px",
+              left: "20px",
+              background: "white",
+              padding: "16px",
+              borderRadius: "12px",
               boxShadow:
                 "0 4px 16px rgba(0,0,0,0.22)",
-
-              maxWidth:
-                "340px",
-
+              maxWidth: "340px",
               width:
                 "calc(100vw - 40px)",
-
               fontFamily:
                 "Arial, sans-serif",
-
-              zIndex:
-                20,
+              zIndex: 20,
             }}
           >
             <PanelHeader
@@ -2867,34 +1835,17 @@ function App() {
               style={{
                 display:
                   "inline-flex",
-
-                alignItems:
-                  "center",
-
-                gap:
-                  "6px",
-
-                background:
-                  "#eff6ff",
-
-                color:
-                  "#1d4ed8",
-
-                padding:
-                  "5px 9px",
-
-                borderRadius:
-                  "6px",
-
-                fontSize:
-                  "12px",
-
-                fontWeight:
-                  "bold",
+                alignItems: "center",
+                gap: "6px",
+                background: "#eff6ff",
+                color: "#1d4ed8",
+                padding: "5px 9px",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: "bold",
               }}
             >
               {destinationInfo.landmarkIcon}
-
               {destinationInfo.landmarkLabel}
             </div>
 
@@ -2902,27 +1853,18 @@ function App() {
               style={{
                 margin:
                   "10px 0 5px",
-
-                fontSize:
-                  "13px",
+                fontSize: "13px",
               }}
             >
-              <strong>
-                Type:
-              </strong>{" "}
+              <strong>Type:</strong>{" "}
               {destinationInfo.category}
             </p>
 
             <p
               style={{
-                margin:
-                  "5px 0",
-
-                fontSize:
-                  "12px",
-
-                color:
-                  "#555",
+                margin: "5px 0",
+                fontSize: "12px",
+                color: "#555",
               }}
             >
               {destinationInfo.displayName}
@@ -2932,22 +1874,14 @@ function App() {
               style={{
                 margin:
                   "5px 0 0",
-
-                fontSize:
-                  "11px",
-
-                color:
-                  "#777",
+                fontSize: "11px",
+                color: "#777",
               }}
             >
               Coordinates:{" "}
-              {destinationInfo.latitude.toFixed(
-                5,
-              )}
+              {destinationInfo.latitude.toFixed(5)}
               {" , "}
-              {destinationInfo.longitude.toFixed(
-                5,
-              )}
+              {destinationInfo.longitude.toFixed(5)}
             </p>
           </section>
         )}
@@ -2959,53 +1893,31 @@ function App() {
       {selectedLandmark && (
         <section
           style={{
-            position:
-              "absolute",
-
+            position: "absolute",
             top:
               destinationInfo &&
               destinationPanelOpen
                 ? "270px"
                 : "80px",
-
-            left:
-              "20px",
-
-            background:
-              "white",
-
-            padding:
-              "12px",
-
-            borderRadius:
-              "10px",
-
+            left: "20px",
+            background: "white",
+            padding: "12px",
+            borderRadius: "10px",
             boxShadow:
               "0 3px 12px rgba(0,0,0,0.2)",
-
             fontFamily:
               "Arial, sans-serif",
-
-            zIndex:
-              19,
-
-            maxWidth:
-              "300px",
+            zIndex: 19,
+            maxWidth: "300px",
           }}
         >
           <div
             style={{
-              display:
-                "flex",
-
+              display: "flex",
               justifyContent:
                 "space-between",
-
-              alignItems:
-                "center",
-
-              gap:
-                "10px",
+              alignItems: "center",
+              gap: "10px",
             }}
           >
             <strong>
@@ -3015,31 +1927,16 @@ function App() {
 
             <button
               onClick={() =>
-                setSelectedLandmark(
-                  null,
-                )
+                setSelectedLandmark(null)
               }
               style={{
-                border:
-                  "none",
-
-                background:
-                  "#f1f5f9",
-
-                borderRadius:
-                  "6px",
-
-                width:
-                  "26px",
-
-                height:
-                  "26px",
-
-                cursor:
-                  "pointer",
-
-                fontSize:
-                  "17px",
+                border: "none",
+                background: "#f1f5f9",
+                borderRadius: "6px",
+                width: "26px",
+                height: "26px",
+                cursor: "pointer",
+                fontSize: "17px",
               }}
             >
               ×
@@ -3048,14 +1945,9 @@ function App() {
 
           <div
             style={{
-              marginTop:
-                "6px",
-
-              fontSize:
-                "12px",
-
-              color:
-                "#475569",
+              marginTop: "6px",
+              fontSize: "12px",
+              color: "#475569",
             }}
           >
             {selectedLandmark.label}
@@ -3071,73 +1963,42 @@ function App() {
         routePanelOpen && (
           <section
             style={{
-              position:
-                "absolute",
-
+              position: "absolute",
               top:
                 destinationInfo &&
                 destinationPanelOpen
                   ? "370px"
                   : "80px",
-
-              left:
-                "20px",
-
-              background:
-                "white",
-
-              padding:
-                "16px",
-
-              borderRadius:
-                "12px",
-
+              left: "20px",
+              background: "white",
+              padding: "16px",
+              borderRadius: "12px",
               boxShadow:
                 "0 4px 16px rgba(0,0,0,0.22)",
-
-              width:
-                "340px",
-
+              width: "340px",
               maxWidth:
                 "calc(100vw - 40px)",
-
-              maxHeight:
-                "65vh",
-
-              overflowY:
-                "auto",
-
+              maxHeight: "65vh",
+              overflowY: "auto",
               fontFamily:
                 "Arial, sans-serif",
-
-              zIndex:
-                18,
+              zIndex: 18,
             }}
           >
             <PanelHeader
               title="🧭 Route Information"
               onClose={() =>
-                setRoutePanelOpen(
-                  false,
-                )
+                setRoutePanelOpen(false)
               }
             />
 
-            {/* Basic route */}
-
             <div
               style={{
-                display:
-                  "grid",
-
+                display: "grid",
                 gridTemplateColumns:
                   "1fr 1fr",
-
-                gap:
-                  "8px",
-
-                marginTop:
-                  "12px",
+                gap: "8px",
+                marginTop: "12px",
               }}
             >
               <InfoCard
@@ -3151,8 +2012,6 @@ function App() {
               />
             </div>
 
-            {/* AI */}
-
             {routeAIResult && (
               <>
                 <hr />
@@ -3163,23 +2022,13 @@ function App() {
 
                 <div
                   style={{
-                    marginTop:
-                      "8px",
-
-                    padding:
-                      "10px",
-
-                    background:
-                      "#f8fafc",
-
-                    borderRadius:
-                      "8px",
-
+                    marginTop: "8px",
+                    padding: "10px",
+                    background: "#f8fafc",
+                    borderRadius: "8px",
                     border:
                       "1px solid #e2e8f0",
-
-                    fontSize:
-                      "12px",
+                    fontSize: "12px",
                   }}
                 >
                   <p
@@ -3216,11 +2065,8 @@ function App() {
 
                   <p
                     style={{
-                      margin:
-                        0,
-
-                      color:
-                        "#475569",
+                      margin: 0,
+                      color: "#475569",
                     }}
                   >
                     {
@@ -3233,46 +2079,29 @@ function App() {
               </>
             )}
 
-            {/* Directions */}
-
             <hr />
 
-            <strong>
-              Directions
-            </strong>
+            <strong>Directions</strong>
 
             <ol
               style={{
-                paddingLeft:
-                  "22px",
+                paddingLeft: "22px",
               }}
             >
               {steps.map(
-                (
-                  step,
-                  index,
-                ) => (
+                (step, index) => (
                   <li
-                    key={
-                      index
-                    }
+                    key={index}
                     style={{
                       marginBottom:
                         "8px",
-
                       fontSize:
                         "13px",
                     }}
                   >
-                    {
-                      step
-                        .maneuver
-                        .type
-                    }
+                    {step.maneuver.type}
 
-                    {step
-                      .maneuver
-                      .modifier
+                    {step.maneuver.modifier
                       ? ` ${step.maneuver.modifier}`
                       : ""}
 
@@ -3284,28 +2113,18 @@ function App() {
               )}
             </ol>
 
-            {/* Navigation */}
-
             <hr />
 
             <div
               style={{
-                display:
-                  "flex",
-
-                alignItems:
-                  "center",
-
+                display: "flex",
+                alignItems: "center",
                 justifyContent:
                   "space-between",
-
-                gap:
-                  "10px",
+                gap: "10px",
               }}
             >
-              <strong>
-                Navigation
-              </strong>
+              <strong>Navigation</strong>
 
               <button
                 onClick={() =>
@@ -3314,29 +2133,14 @@ function App() {
                   )
                 }
                 style={{
-                  border:
-                    "none",
-
-                  background:
-                    "#eff6ff",
-
-                  color:
-                    "#1d4ed8",
-
-                  padding:
-                    "6px 9px",
-
-                  borderRadius:
-                    "6px",
-
-                  cursor:
-                    "pointer",
-
-                  fontSize:
-                    "12px",
-
-                  fontWeight:
-                    "bold",
+                  border: "none",
+                  background: "#eff6ff",
+                  color: "#1d4ed8",
+                  padding: "6px 9px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: "bold",
                 }}
               >
                 Open
@@ -3353,38 +2157,20 @@ function App() {
         navigationPanelOpen && (
           <section
             style={{
-              position:
-                "absolute",
-
-              top:
-                "80px",
-
-              right:
-                "20px",
-
-              background:
-                "white",
-
-              padding:
-                "16px",
-
-              borderRadius:
-                "12px",
-
+              position: "absolute",
+              top: "80px",
+              right: "20px",
+              background: "white",
+              padding: "16px",
+              borderRadius: "12px",
               boxShadow:
                 "0 4px 16px rgba(0,0,0,0.22)",
-
-              width:
-                "300px",
-
+              width: "300px",
               maxWidth:
                 "calc(100vw - 40px)",
-
               fontFamily:
                 "Arial, sans-serif",
-
-              zIndex:
-                20,
+              zIndex: 20,
             }}
           >
             <PanelHeader
@@ -3398,17 +2184,10 @@ function App() {
 
             <div
               style={{
-                marginTop:
-                  "12px",
-
-                display:
-                  "flex",
-
-                gap:
-                  "8px",
-
-                flexWrap:
-                  "wrap",
+                marginTop: "12px",
+                display: "flex",
+                gap: "8px",
+                flexWrap: "wrap",
               }}
             >
               {!navigationActive &&
@@ -3417,9 +2196,9 @@ function App() {
                     onClick={
                       startNavigation
                     }
-                    style={{
-                      ...primaryButtonStyle,
-                    }}
+                    style={
+                      primaryButtonStyle
+                    }
                   >
                     ▶ Start
                   </button>
@@ -3430,9 +2209,9 @@ function App() {
                   onClick={
                     pauseNavigation
                   }
-                  style={{
-                    ...warningButtonStyle,
-                  }}
+                  style={
+                    warningButtonStyle
+                  }
                 >
                   ⏸ Pause
                 </button>
@@ -3442,9 +2221,9 @@ function App() {
                 onClick={
                   resetNavigation
                 }
-                style={{
-                  ...secondaryButtonStyle,
-                }}
+                style={
+                  secondaryButtonStyle
+                }
               >
                 🔄 Reset
               </button>
@@ -3453,23 +2232,12 @@ function App() {
             {navigationActive && (
               <div
                 style={{
-                  marginTop:
-                    "12px",
-
-                  padding:
-                    "10px",
-
-                  background:
-                    "#eff6ff",
-
-                  borderRadius:
-                    "8px",
-
-                  color:
-                    "#1d4ed8",
-
-                  fontSize:
-                    "12px",
+                  marginTop: "12px",
+                  padding: "10px",
+                  background: "#eff6ff",
+                  borderRadius: "8px",
+                  color: "#1d4ed8",
+                  fontSize: "12px",
                 }}
               >
                 <strong>
@@ -3479,17 +2247,14 @@ function App() {
                 <p>
                   Direction:{" "}
                   <strong>
-                    {
-                      navigationDirection
-                    }
+                    {navigationDirection}
                   </strong>
                 </p>
 
                 {turnDetected && (
                   <p
                     style={{
-                      fontWeight:
-                        "bold",
+                      fontWeight: "bold",
                     }}
                   >
                     ↪ Turn detected
@@ -3499,8 +2264,7 @@ function App() {
                 <p>
                   Progress:{" "}
                   {Math.round(
-                    distanceProgress *
-                      100,
+                    distanceProgress * 100,
                   )}
                   %
                 </p>
@@ -3510,11 +2274,8 @@ function App() {
             {navigationCompleted && (
               <p
                 style={{
-                  color:
-                    "#16a34a",
-
-                  fontWeight:
-                    "bold",
+                  color: "#16a34a",
+                  fontWeight: "bold",
                 }}
               >
                 🏁 Arrived at destination
@@ -3524,22 +2285,14 @@ function App() {
             {navigationPosition && (
               <p
                 style={{
-                  fontSize:
-                    "12px",
-
-                  color:
-                    "#555",
+                  fontSize: "12px",
+                  color: "#555",
                 }}
               >
                 Position:{" "}
-                {
-                  navigationPosition[1]
-                .toFixed(5)}
+                {navigationPosition[1].toFixed(5)}
                 {", "}
-                {
-                  navigationPosition[0]
-                    .toFixed(5)
-                }
+                {navigationPosition[0].toFixed(5)}
               </p>
             )}
           </section>
@@ -3553,50 +2306,24 @@ function App() {
         routeInfo && (
           <section
             style={{
-              position:
-                "absolute",
-
-              bottom:
-                "25px",
-
-              left:
-                "50%",
-
+              position: "absolute",
+              bottom: "25px",
+              left: "50%",
               transform:
                 "translateX(-50%)",
-
-              background:
-                "white",
-
-              padding:
-                "10px 14px",
-
-              borderRadius:
-                "10px",
-
+              background: "white",
+              padding: "10px 14px",
+              borderRadius: "10px",
               boxShadow:
                 "0 3px 12px rgba(0,0,0,0.25)",
-
               fontFamily:
                 "Arial, sans-serif",
-
-              zIndex:
-                25,
-
-              display:
-                "flex",
-
-              gap:
-                "8px",
-
-              alignItems:
-                "center",
-
-              flexWrap:
-                "wrap",
-
-              justifyContent:
-                "center",
+              zIndex: 25,
+              display: "flex",
+              gap: "8px",
+              alignItems: "center",
+              flexWrap: "wrap",
+              justifyContent: "center",
             }}
           >
             {!navigationActive &&
@@ -3605,9 +2332,9 @@ function App() {
                   onClick={
                     startNavigation
                   }
-                  style={{
-                    ...primaryButtonStyle,
-                  }}
+                  style={
+                    primaryButtonStyle
+                  }
                 >
                   ▶ Start Navigation
                 </button>
@@ -3618,9 +2345,9 @@ function App() {
                 onClick={
                   pauseNavigation
                 }
-                style={{
-                  ...warningButtonStyle,
-                }}
+                style={
+                  warningButtonStyle
+                }
               >
                 ⏸ Pause
               </button>
@@ -3630,9 +2357,9 @@ function App() {
               onClick={
                 resetNavigation
               }
-              style={{
-                ...secondaryButtonStyle,
-              }}
+              style={
+                secondaryButtonStyle
+              }
             >
               🔄 Reset
             </button>
@@ -3640,14 +2367,9 @@ function App() {
             {navigationActive && (
               <span
                 style={{
-                  color:
-                    "#2563eb",
-
-                  fontWeight:
-                    "bold",
-
-                  fontSize:
-                    "13px",
+                  color: "#2563eb",
+                  fontWeight: "bold",
+                  fontSize: "13px",
                 }}
               >
                 {navigationDirection ===
@@ -3663,8 +2385,7 @@ function App() {
             {navigationCompleted && (
               <strong
                 style={{
-                  color:
-                    "#16a34a",
+                  color: "#16a34a",
                 }}
               >
                 🏁 Arrived
@@ -3673,9 +2394,7 @@ function App() {
           </section>
         )}
 
-      {/* ======================================================
-          RESPONSIVE / GLOBAL STYLES
-          ====================================================== */}
+      {/* GLOBAL STYLES */}
 
       <style>
         {`
@@ -3704,9 +2423,16 @@ function App() {
           select:focus-visible {
             outline:
               2px solid #2563eb;
-
             outline-offset:
               2px;
+          }
+
+          button:hover:not(:disabled) {
+            filter: brightness(0.97);
+          }
+
+          button:disabled {
+            cursor: not-allowed;
           }
 
           @media (max-width: 700px) {
@@ -3723,115 +2449,71 @@ function App() {
 
 /*
  * ============================================================
- * REUSABLE UI HELPERS
+ * UI HELPERS
  * ============================================================
  */
 
+const statusBoxStyle: React.CSSProperties = {
+  background: "white",
+  padding: "8px 12px",
+  borderRadius: "8px",
+  boxShadow:
+    "0 2px 8px rgba(0,0,0,0.2)",
+  fontSize: "14px",
+  fontWeight: "bold",
+};
+
+const viewButtonStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  borderRadius: "8px",
+  border: "1px solid #ccc",
+  fontWeight: "bold",
+  cursor: "pointer",
+};
+
 const menuItemStyle: React.CSSProperties = {
-  display:
-    "block",
-
-  width:
-    "100%",
-
-  border:
-    "none",
-
-  background:
-    "white",
-
-  padding:
-    "11px 10px",
-
-  textAlign:
-    "left",
-
-  borderRadius:
-    "7px",
-
-  cursor:
-    "pointer",
-
-  fontSize:
-    "13px",
-
-  fontWeight:
-    "600",
-
-  color:
-    "#1f2937",
-
-  marginBottom:
-    "2px",
+  display: "block",
+  width: "100%",
+  border: "none",
+  background: "white",
+  padding: "11px 10px",
+  textAlign: "left",
+  borderRadius: "7px",
+  cursor: "pointer",
+  fontSize: "13px",
+  fontWeight: "600",
+  color: "#1f2937",
+  marginBottom: "2px",
 };
 
 const primaryButtonStyle: React.CSSProperties = {
-  background:
-    "#2563eb",
-
-  color:
-    "white",
-
-  border:
-    "none",
-
-  padding:
-    "8px 12px",
-
-  borderRadius:
-    "7px",
-
-  cursor:
-    "pointer",
-
-  fontWeight:
-    "bold",
+  background: "#2563eb",
+  color: "white",
+  border: "none",
+  padding: "8px 12px",
+  borderRadius: "7px",
+  cursor: "pointer",
+  fontWeight: "bold",
 };
 
 const warningButtonStyle: React.CSSProperties = {
-  background:
-    "#f59e0b",
-
-  color:
-    "white",
-
-  border:
-    "none",
-
-  padding:
-    "8px 12px",
-
-  borderRadius:
-    "7px",
-
-  cursor:
-    "pointer",
-
-  fontWeight:
-    "bold",
+  background: "#f59e0b",
+  color: "white",
+  border: "none",
+  padding: "8px 12px",
+  borderRadius: "7px",
+  cursor: "pointer",
+  fontWeight: "bold",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
-  background:
-    "#6b7280",
-
-  color:
-    "white",
-
-  border:
-    "none",
-
-  padding:
-    "8px 12px",
-
-  borderRadius:
-    "7px",
-
-  cursor:
-    "pointer",
-
-  fontWeight:
-    "bold",
+  background: "#6b7280",
+  color: "white",
+  border: "none",
+  padding: "8px 12px",
+  borderRadius: "7px",
+  cursor: "pointer",
+  fontWeight: "bold",
 };
 
 function PanelHeader({
@@ -3844,70 +2526,38 @@ function PanelHeader({
   return (
     <div
       style={{
-        display:
-          "flex",
-
-        alignItems:
-          "center",
-
+        display: "flex",
+        alignItems: "center",
         justifyContent:
           "space-between",
-
-        gap:
-          "12px",
+        gap: "12px",
       }}
     >
       <h3
         style={{
-          margin:
-            0,
-
-          fontSize:
-            "17px",
+          margin: 0,
+          fontSize: "17px",
         }}
       >
         {title}
       </h3>
 
       <button
-        onClick={
-          onClose
-        }
+        onClick={onClose}
         title="Close"
         aria-label="Close"
         style={{
-          width:
-            "28px",
-
-          height:
-            "28px",
-
-          border:
-            "none",
-
-          borderRadius:
-            "7px",
-
-          background:
-            "#f1f5f9",
-
-          color:
-            "#475569",
-
-          cursor:
-            "pointer",
-
-          fontSize:
-            "18px",
-
-          lineHeight:
-            1,
-
-          fontWeight:
-            "bold",
-
-          flexShrink:
-            0,
+          width: "28px",
+          height: "28px",
+          border: "none",
+          borderRadius: "7px",
+          background: "#f1f5f9",
+          color: "#475569",
+          cursor: "pointer",
+          fontSize: "18px",
+          lineHeight: 1,
+          fontWeight: "bold",
+          flexShrink: 0,
         }}
       >
         ×
@@ -3926,29 +2576,18 @@ function InfoCard({
   return (
     <div
       style={{
-        background:
-          "#f8fafc",
-
+        background: "#f8fafc",
         border:
           "1px solid #e2e8f0",
-
-        borderRadius:
-          "8px",
-
-        padding:
-          "10px",
+        borderRadius: "8px",
+        padding: "10px",
       }}
     >
       <div
         style={{
-          fontSize:
-            "11px",
-
-          color:
-            "#64748b",
-
-          marginBottom:
-            "3px",
+          fontSize: "11px",
+          color: "#64748b",
+          marginBottom: "3px",
         }}
       >
         {label}
@@ -3956,8 +2595,7 @@ function InfoCard({
 
       <strong
         style={{
-          fontSize:
-            "14px",
+          fontSize: "14px",
         }}
       >
         {value}
